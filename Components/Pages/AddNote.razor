@@ -12,7 +12,7 @@
 
     <div>
         <label>Название:</label>
-        <InputText @bind-Value="newNote.Title" placeholder="Введите название" title="Title"/>
+        <InputText @bind-Value="newNote.Title" placeholder="Введите название" title="Title" />
         <ValidationMessage For="@(() => newNote.Title)" />
     </div>
 
@@ -36,6 +36,10 @@
 
     private void HandleValidSubmit()
     {
+        if (string.IsNullOrWhiteSpace(newNote.Title)){
+            Console.WriteLine("Название не может быть пустым");
+            return;
+        }
         try
         {
             Console.WriteLine($"Данные перед сохранением: {newNote.Title}, {newNote.Description}, {newNote.CreatedBy}");
@@ -50,8 +54,6 @@
 
     private Note newNote = new Note
         {
-            Title = "f",
-            Description = "f",
-            CreatedBy = "f"
+            
         };
 }

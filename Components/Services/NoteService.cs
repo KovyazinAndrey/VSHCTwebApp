@@ -5,7 +5,8 @@ namespace VSHCTwebApp.Components.Services
 {
     public class NoteService
     {
-        private List<Note> _notes = new List<Note>();
+        private static readonly List<Note> notes = new List<Note>();
+        private readonly List<Note> _notes = notes;
 
         public void AddNote(Note note)
         {
@@ -13,14 +14,14 @@ namespace VSHCTwebApp.Components.Services
                 throw new ArgumentNullException(nameof(note));
 
             note.CreatedAt = DateTime.Now;
-            _notes.Add(note);
+            notes.Add(note);
         }
 
         public List<Note> GetNotes() => _notes;
 
         public Note GetNoteByTitle(string title)
         {
-            return _notes.FirstOrDefault(n => n.Title == title);
+            return notes.FirstOrDefault(n => n.Title == title);
         }
     }
 }
