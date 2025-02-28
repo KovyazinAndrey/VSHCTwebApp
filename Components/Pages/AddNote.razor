@@ -10,25 +10,25 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <div>
+    <div class="form-group">
         <label>Название:</label>
-        <InputText @bind-Value="newNote.Title" placeholder="Введите название" title="Title" />
+        <InputText @bind-Value="newNote.Title" placeholder="Введите название" title="Title" class="form-control" />
         <ValidationMessage For="@(() => newNote.Title)" />
     </div>
 
-    <div>
+    <div class="form-group">
         <label>Описание:</label>
-        <InputTextArea @bind-Value="newNote.Description" placeholder="Введите описание" title="Description" />
+        <InputTextArea @bind-Value="newNote.Description" placeholder="Введите описание" title="Description" class="form-control" />
         <ValidationMessage For="@(() => newNote.Description)" />
     </div>
 
-    <div>
+    <div class="form-group">
         <label>Создатель:</label>
-        <InputText @bind-Value="newNote.CreatedBy" placeholder="Введите имя создателя" title="CreatedBy" />
+        <InputText @bind-Value="newNote.CreatedBy" placeholder="Введите имя создателя" title="CreatedBy" class="form-control" />
         <ValidationMessage For="@(() => newNote.CreatedBy)" />
     </div>
 
-    <button type="submit">Добавить</button>
+    <button type="submit" class="btn btn-primary mt-3">Добавить</button>
 
 </EditForm>
 

@@ -1,16 +1,23 @@
 ﻿@page "/ideas-list"
 @inject VSHCTwebApp.Components.Services.NoteService NoteService
 
-<h3>Список идей</h3>
-
-<ul>
-    @foreach (var note in NoteService.GetNotes())
-    {
-        <li>
-            <a href="/note/@note.Title">@note.Title</a>
-        </li>
-    }
-</ul>
+@if (NoteService.GetNotes().Any())
+{
+    <ul>
+        @foreach (var note in NoteService.GetNotes())
+        {
+            <li>
+                <h3>@note.Title</h3>
+                <p>@note.Description</p>
+                <small>Создал: @note.CreatedBy, @note.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p>Пока нет идей</p>
+}
 
 <a href="/add-note">Добавить новую идею</a>
 
