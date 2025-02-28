@@ -1,0 +1,57 @@
+﻿@page "/add-note"
+@using VSHCTwebApp.Components.Models
+@inject VSHCTwebApp.Components.Services.NoteService NoteService
+@inject NavigationManager Navigation
+
+<h3>Добавить новую идею</h3>
+
+<EditForm Model="@newNote" OnValidSubmit="HandleValidSubmit" FormName="addNoteForm">
+
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Название:</label>
+        <InputText @bind-Value="newNote.Title" placeholder="Введите название" title="Title"/>
+        <ValidationMessage For="@(() => newNote.Title)" />
+    </div>
+
+    <div>
+        <label>Описание:</label>
+        <InputTextArea @bind-Value="newNote.Description" placeholder="Введите описание" title="Description" />
+        <ValidationMessage For="@(() => newNote.Description)" />
+    </div>
+
+    <div>
+        <label>Создатель:</label>
+        <InputText @bind-Value="newNote.CreatedBy" placeholder="Введите имя создателя" title="CreatedBy" />
+        <ValidationMessage For="@(() => newNote.CreatedBy)" />
+    </div>
+
+    <button type="submit">Добавить</button>
+
+</EditForm>
+
+@code {
+
+    private void HandleValidSubmit()
+    {
+        try
+        {
+            Console.WriteLine($"Данные перед сохранением: {newNote.Title}, {newNote.Description}, {newNote.CreatedBy}");
+            NoteService.AddNote(newNote);
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка: {ex.Message}");
+        }
+    }
+
+    private Note newNote = new Note
+        {
+            Title = "f",
+            Description = "f",
+            CreatedBy = "f"
+        };
+}

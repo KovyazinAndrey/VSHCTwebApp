@@ -1,0 +1,29 @@
+﻿@page "/note/{Title}"
+@inject VSHCTwebApp.Components.Services.NoteService NoteService
+@using VSHCTwebApp.Components.Models
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+
+    private Note note;
+
+    protected override void OnParametersSet()
+    {
+        note = NoteService.GetNoteByTitle(Title);
+    }
+}
+
+@if (note != null)
+{
+    <h3>@note.Title</h3>
+    <p>@note.Description</p>
+    <p><strong>Создатель:</strong> @note.CreatedBy</p>
+    <p><strong>Дата создания:</strong> @note.CreatedAt.ToString("dd.MM.yyyy HH:mm")</p>
+}
+else
+{
+    <p>Запись не найдена.</p>
+}
+
+<a href="/ideas-list">Вернуться к списку</a>

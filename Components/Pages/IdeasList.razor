@@ -1,0 +1,19 @@
+﻿@page "/ideas-list"
+@inject VSHCTwebApp.Components.Services.NoteService NoteService
+
+<h3>Список идей</h3>
+
+<ul>
+    @foreach (var note in NoteService.GetNotes())
+    {
+        <li>
+            <a href="/note/@note.Title">@note.Title</a>
+        </li>
+    }
+</ul>
+
+<a href="/add-note">Добавить новую идею</a>
+
+@code {
+
+}

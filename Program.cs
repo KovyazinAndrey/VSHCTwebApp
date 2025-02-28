@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using VSHCTwebApp.Components;
 using VSHCTwebApp.Components.Account;
+using VSHCTwebApp.Components.Services;
 using VSHCTwebApp.Data;
 
 namespace VSHCTwebApp
@@ -40,6 +41,8 @@ namespace VSHCTwebApp
                 .AddDefaultTokenProviders();
 
             builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+
+            builder.Services.AddSingleton<NoteService>();
 
             var app = builder.Build();
 
