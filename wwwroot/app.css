@@ -8,8 +8,8 @@ a, .btn-link {
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: #6D5AA6;
+    border-color: #6D5AA6;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -48,4 +48,46 @@ h1:focus {
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+
+.nav-scrollable {
+    background-color: #6d5aa6 !important; /* Устанавливаем цвет фона */
+    color: #ffffff; /* Устанавливаем цвет текста */
+
+}
+
+.navbar {
+    background-color: #6d5aa6 !important; /* Устанавливаем цвет фона */
+    color: #ffffff; /* Устанавливаем цвет текста */
+}
+
+.nav-link {
+    background-color: #3E2E6F !important; /* Устанавливаем цвет фона */
+    color: #ffffff; /* Устанавливаем цвет текста */
+}
+
+.page {
+    background-color: #D6E7FA !important; /* Устанавливаем цвет фона */
+    color: #3E2E6F; /* Устанавливаем цвет текста */
+}
+
+.top-row {
+    background-color: #D6E7FA !important; /* Устанавливаем цвет фона */
+    color: #3E2E6F; /* Устанавливаем цвет текста */
+}
+
+.container-fluid {
+    background-color: #D6E7FA !important; /* Устанавливаем цвет фона */
+    color: #3E2E6F; /* Устанавливаем цвет текста */
+}
+
+
+.navbar-brand {
+    color: #3E2E6F; /* Устанавливаем цвет текста */
+    margin-left: 35px;
+}
+   
+
+.navbar-dark .navbar-brand{
+    color: #3E2E6F; /* Устанавливаем цвет текста */
 }
