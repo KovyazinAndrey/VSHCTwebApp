@@ -12,19 +12,19 @@
 
     <div class="form-group">
         <label>Название:</label>
-        <InputText @bind-Value="newNote.Title" placeholder="Введите название" title="Title" class="form-control" />
+        <InputText id="Title" @bind-Value="newNote.Title" placeholder="Введите название" title="Title" class="form-control" />
         <ValidationMessage For="@(() => newNote.Title)" />
     </div>
 
     <div class="form-group">
         <label>Описание:</label>
-        <InputTextArea @bind-Value="newNote.Description" placeholder="Введите описание" title="Description" class="form-control" />
+        <InputTextArea id="Description" @bind-Value="newNote.Description" placeholder="Введите описание" title="Description" class="form-control" />
         <ValidationMessage For="@(() => newNote.Description)" />
     </div>
 
     <div class="form-group">
         <label>Создатель:</label>
-        <InputText @bind-Value="newNote.CreatedBy" placeholder="Введите имя создателя" title="CreatedBy" class="form-control" />
+        <InputText id="CreatedBy" @bind-Value="newNote.CreatedBy" placeholder="Введите имя создателя" title="CreatedBy" class="form-control" />
         <ValidationMessage For="@(() => newNote.CreatedBy)" />
     </div>
 
