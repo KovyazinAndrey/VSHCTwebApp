@@ -1,0 +1,152 @@
+@page "/commands"
+@using VSHCTwebApp.Components.Models
+@using VSHCTwebApp.Components.Services
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Web
+@inject CommandService CommandService
+@inject ILogger<Commands> Logger
+
+<PageTitle>Список команд</PageTitle>
+
+<div class="container mt-4">
+    <h1>Список доступных команд</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Добавить новую команду</h5>
+        </div>
+        <div class="card-body">
+            <form @onsubmit:preventDefault @onsubmit="HandleValidSubmitAsync">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="name" class="form-label">Название команды</label>
+                        <input type="text" id="name" class="form-control" @bind="newCommand.Name" @bind:event="oninput" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <input type="text" id="description" class="form-control" @bind="newCommand.Description" @bind:event="oninput" />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить команду</button>
+            </form>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert @(isError ? "alert-danger" : "alert-success") mt-3">
+                    @message
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Команда</th>
+                            <th>Описание</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var command in commands)
+                        {
+                            <tr>
+                                <td><code>@command.Name</code></td>
+                                <td>@command.Description</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" @onclick="async () => await DeleteCommandAsync(command.Name)">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    code {
+        background-color: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #e83e8c;
+    }
+</style>
+
+@code {
+    private Command newCommand = new Command();
+    private string message = "";
+    private bool isError = false;
+    private List<Command> commands = new List<Command>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("Инициализация страницы команд");
+        await LoadCommandsAsync();
+    }
+
+    private async Task LoadCommandsAsync()
+    {
+        Logger.LogInformation("Загрузка списка команд");
+        commands = CommandService.GetAllCommands();
+        Logger.LogInformation($"Загружено команд: {commands.Count}");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleValidSubmitAsync()
+    {
+        try
+        {
+            Logger.LogInformation($"Попытка добавить команду: {newCommand.Name} - {newCommand.Description}");
+
+            CommandService.AddCommand(newCommand);
+            
+            message = "Команда успешно добавлена!";
+            isError = false;
+            Logger.LogInformation($"Команда успешно добавлена: {newCommand.Name}");
+            
+            // Очищаем форму
+            newCommand = new Command();
+            
+            // Обновляем список команд
+            await LoadCommandsAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            isError = true;
+            Logger.LogError(ex, "Ошибка при добавлении команды");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteCommandAsync(string name)
+    {
+        try
+        {
+            Logger.LogInformation($"Попытка удалить команду: {name}");
+            CommandService.DeleteCommand(name);
+            message = "Команда успешно удалена!";
+            isError = false;
+            Logger.LogInformation($"Команда успешно удалена: {name}");
+            
+            // Обновляем список команд
+            await LoadCommandsAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            message = ex.Message;
+            isError = true;
+            Logger.LogError(ex, "Ошибка при удалении команды");
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+} 
