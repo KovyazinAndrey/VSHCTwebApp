@@ -1,0 +1,55 @@
+﻿@page "/notes/create"
+@using Microsoft.EntityFrameworkCore
+@using VSHCTwebApp.Components.Models
+@inject IDbContextFactory<VSHCTwebApp.Data.VSHCTwebAppContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Предложить идею</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Note" OnValidSubmit="AddNote" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="title" class="form-label">Название:</label> 
+                <InputText id="title" @bind-Value="Note.Title" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Note.Title" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="description" class="form-label">Описание:</label> 
+                <InputTextArea id="description" @bind-Value="Note.Description" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Note.Description" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="createdby" class="form-label">Кем создано:</label> 
+                <InputText id="createdby" @bind-Value="Note.CreatedBy" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Note.CreatedBy" class="text-danger" /> 
+            </div>        
+              
+            <button type="submit" class="btn btn-primary">Предложить</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/notes">Вернуться</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Note Note { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddNote()
+    {
+        Note.CreatedAt = DateTime.Now;
+        using var context = DbFactory.CreateDbContext();
+        context.Note.Add(Note);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/notes");
+    }
+}

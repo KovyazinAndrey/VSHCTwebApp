@@ -13,19 +13,19 @@
     <div class="form-group">
         <label>Название:</label>
         <InputText id="Title" @bind-Value="newNote.Title" placeholder="Введите название" title="Title" class="form-control" />
-        <ValidationMessage For="@(() => newNote.Title)" />
+        
     </div>
 
     <div class="form-group">
         <label>Описание:</label>
         <InputTextArea id="Description" @bind-Value="newNote.Description" placeholder="Введите описание" title="Description" class="form-control" />
-        <ValidationMessage For="@(() => newNote.Description)" />
+        
     </div>
 
     <div class="form-group">
         <label>Создатель:</label>
         <InputText id="CreatedBy" @bind-Value="newNote.CreatedBy" placeholder="Введите имя создателя" title="CreatedBy" class="form-control" />
-        <ValidationMessage For="@(() => newNote.CreatedBy)" />
+        
     </div>
 
     <button type="submit" class="btn btn-primary mt-3">Добавить</button>
@@ -33,8 +33,9 @@
 </EditForm>
 
 @code {
+    private Note newNote { get; set; } = new();
 
-    private void HandleValidSubmit()
+    public async Task HandleValidSubmit(EditContext editContext)
     {
         if (string.IsNullOrWhiteSpace(newNote.Title)){
             Console.WriteLine("Название не может быть пустым");
@@ -52,8 +53,6 @@
         }
     }
 
-    private Note newNote = new Note
-        {
-            
-        };
+    }
+    
 }

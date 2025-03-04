@@ -4,6 +4,8 @@ namespace VSHCTwebApp.Components.Models
 {
     public class Note
     {
+        public int Id { get; set; }
+
         [Required(ErrorMessage = "Название обязательно")]
         public string Title { get; set; } = string.Empty;
 

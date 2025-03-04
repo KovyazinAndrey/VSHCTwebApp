@@ -30,7 +30,7 @@
                 <button type="submit" class="btn btn-primary">Добавить команду</button>
             </form>
 
-            @if (!string.IsNullOrEmpty(message))
+            @if (!string.IsNullOrWhiteSpace(message))
             {
                 <div class="alert @(isError ? "alert-danger" : "alert-success") mt-3">
                     @message
