@@ -42,9 +42,16 @@ namespace VSHCTwebApp
 
             builder.Services.AddDbContextFactory<VSHCTwebAppContext>(options =>
                 options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("VSHCTwebApp") ??
+                    builder.Configuration.GetConnectionString("VSHCTwebAppContext") ??
                     throw new InvalidOperationException(
-            "Connection string 'VSHCTwebApp' not found.")));
+            "Connection string 'VSHCTwebAppContext' not found.")));
+
+            builder.Services.AddDbContextFactory<VSHCTwebAppContext>(options =>
+                options.UseSqlServer(
+            builder.Configuration.GetConnectionString("VSHCTwebAppContext") ??
+                throw new InvalidOperationException(
+                "Connection string 'VSHCTwebAppContext' not found.")));
+
 
             builder.Services.AddQuickGridEntityFrameworkAdapter();
 

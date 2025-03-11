@@ -1,0 +1,53 @@
+﻿@page "/commands/create"
+@using Microsoft.EntityFrameworkCore
+@using VSHCTwebApp.Components.Models
+@inject IDbContextFactory<VSHCTwebApp.Data.VSHCTwebAppContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Создание команды</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Command" OnValidSubmit="AddCommand" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="name" class="form-label">Название:</label> 
+                <InputText id="name" @bind-Value="Command.Name" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Command.Name" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="description" class="form-label">Описание:</label> 
+                <InputTextArea id="description" @bind-Value="Command.Description" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Command.Description" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="members" class="form-label">Члены команды:</label> 
+                <InputTextArea id="members" @bind-Value="Command.Members" class="form-control" aria-required="true"/> 
+                <ValidationMessage For="() => Command.Members" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Создать</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/commands">Вернуться</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Command Command { get; set; } = new();
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddCommand()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Command.Add(Command);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/commands");
+    }
+}

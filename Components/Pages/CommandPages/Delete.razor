@@ -1,0 +1,61 @@
+﻿@page "/commands/delete"
+@using Microsoft.EntityFrameworkCore
+@using VSHCTwebApp.Components.Models
+@inject IDbContextFactory<VSHCTwebApp.Data.VSHCTwebAppContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Удалить</PageTitle>
+
+<h1>Вы уверены что хотите расформировать команду?</h1>
+
+<div>
+    <hr />
+    @if (command is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Название</dt>
+            <dd class="col-sm-10">@command.Name</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Описание</dt>
+            <dd class="col-sm-10">@command.Description</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Члены команды</dt>
+            <dd class="col-sm-10">@command.Members</dd>
+        </dl>
+        <EditForm method="post" Model="command" OnValidSubmit="DeleteCommand" FormName="delete" Enhance>
+            <button type="submit" class="btn btn-danger" disabled="@(command is null)">Расформировать</button> |
+            <a href="/commands">Вернуться</a>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private Command? command;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        command = await context.Command.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (command is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private async Task DeleteCommand()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Command.Remove(command!);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/commands");
+    }
+}
