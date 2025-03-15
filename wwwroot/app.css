@@ -1,5 +1,5 @@
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'JetBrains Mono', Helvetica, Arial, sans-serif;
 }
 
 a, .btn-link {
@@ -90,4 +90,35 @@ h1:focus {
 
 .navbar-dark .navbar-brand{
     color: #3E2E6F; /* Устанавливаем цвет текста */
+}
+
+.btn-idea {
+    display: inline-block;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #ffffff;
+    text-align: right;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    background-color: #6d5aa6 !important;
+    border: 1px solid transparent;
+    padding: .375rem .75rem;
+    font-size: 2rem;
+    border-radius: 1rem;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    margin-left: 20px;
+    margin-bottom: 20px;
+}
+
+.quickgrid.table {
+    background-color: #6d5aa6; /* Замените на точный цвет, если нужно */
+    color: white; /*  Белый текст на фиолетовом фоне обычно хорошо смотрится */
+    /* Добавьте другие стили, которые вам нужны, например: */
+    padding: 8px; /* Отступы вокруг текста */
+    text-align: left; /* Выравнивание текста по левому краю */
+    margin-top: 20px;
 }
