@@ -1,8 +1,16 @@
 ﻿@page "/notes/delete"
+@inject IDbContextFactory<VSHCTwebAppContext> DbFactory
 @using Microsoft.EntityFrameworkCore
 @using VSHCTwebApp.Components.Models
+@using Microsoft.AspNetCore.Identity
+@using VSHCTwebApp.Data
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IDbContextFactory<VSHCTwebApp.Data.VSHCTwebAppContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<ApplicationUser> UserManager
 
 <PageTitle>Delete</PageTitle>
 
@@ -14,7 +22,8 @@
     {
         <p><em>Loading...</em></p>
     }
-    else {
+    else
+    {
         <dl class="row">
             <dt class="col-sm-2">Название</dt>
             <dd class="col-sm-10">@note.Title</dd>
@@ -32,7 +41,16 @@
             <dd class="col-sm-10">@note.CreatedAt</dd>
         </dl>
         <EditForm method="post" Model="note" OnValidSubmit="DeleteNote" FormName="delete" Enhance>
-            <button type="submit" class="btn btn-danger" disabled="@(note is null)">Удалить</button> |
+            <AuthorizeView Policy="AdminOnly">
+                <Authorized Context="authContext">
+                    <button type="submit" class="btn btn-danger" disabled="@(note is null)">Удалить</button>
+                </Authorized>
+                <NotAuthorized Context="authContext">
+                    <div class="alert alert-warning mt-3">
+                        У вас недостаточно прав для удаления.
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
             <a href="/notes">Вернуться</a>
         </EditForm>
     }
