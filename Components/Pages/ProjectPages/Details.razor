@@ -1,0 +1,52 @@
+﻿@page "/projects/details"
+@using Microsoft.EntityFrameworkCore
+@using VSHCTwebApp.Components.Models
+@inject IDbContextFactory<VSHCTwebApp.Data.VSHCTwebAppContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Details</PageTitle>
+
+<h1>Подробнее</h1>
+
+<div>
+
+    <hr />
+    @if (project is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Название</dt>
+            <dd class="col-sm-10">@project.Title</dd>
+            <dt class="col-sm-2">Описание</dt>
+            <dd class="col-sm-10">@project.Description</dd>
+            <dt class="col-sm-2">Кем создано</dt>
+            <dd class="col-sm-10">@project.CreatedBy</dd>
+            <dt class="col-sm-2">Кем одобрено</dt>
+            <dd class="col-sm-10">@project.ConfermedBy</dd>
+        </dl>
+        <div>
+            <a href="@($"/projects/edit?id={project.Id}")">Изменить</a> |
+            <a href="@($"/projects")">Вернуться</a>
+        </div>
+    }
+</div>
+
+@code {
+    private Project? project;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        project = await context.Project.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (project is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}
