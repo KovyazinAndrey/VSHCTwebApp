@@ -19,16 +19,11 @@
 </p>
 
 <QuickGrid Class="table" Items="context.Note">
-    <PropertyColumn Property="note => note.Title" Title = "Название"/>
-    <PropertyColumn Property="note => note.Description" Title = "Описание"/>
-    <PropertyColumn Property="note => note.CreatedBy" Title = "Кем предложено"/>
-    <PropertyColumn Property="note => note.CreatedAt" Title = "Когда предложено"/>
-
-    <TemplateColumn Context="note">
-        <a href="@($"notes/edit?id={note.Id}")">Изменить</a> |
-        <a href="@($"notes/details?id={note.Id}")">Подробнее</a> |
-        <a href="@($"notes/delete?id={note.Id}")">Удалить</a>
+    <TemplateColumn Title="Название" Context="note">
+        <a href="@($"notes/details?id={note.Id}")" class="text-decoration-none">@note.Title</a>
     </TemplateColumn>
+
+    <PropertyColumn Property="note => note.CreatedBy" Title="Кем создано"/>
 </QuickGrid>
 
 @code {

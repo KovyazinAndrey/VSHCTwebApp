@@ -15,14 +15,13 @@
 </p>
 
 <QuickGrid Class="table" Items="context.Project">
-    <PropertyColumn Property="project => project.Title" Title = "Название"/>
+    <TemplateColumn Title="Название" Context="project">
+        <a href="@($"projects/details?id={project.Id}")" class="text-decoration-none">@project.Title</a>
+    </TemplateColumn>
     <PropertyColumn Property="project => project.Description" Title = "Описание"/>
     <PropertyColumn Property="project => project.CreatedBy" Title = "Кем создано"/>
     <PropertyColumn Property="project => project.ConfermedBy" Title = "Кем одобрено"/>
 
-    <TemplateColumn Context="project">
-        <a href="@($"projects/details?id={project.Id}")">Подробнее</a>
-    </TemplateColumn>
 </QuickGrid>
 
 @code {
