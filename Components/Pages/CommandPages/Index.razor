@@ -8,15 +8,21 @@
 
 <PageTitle>Реестр команд</PageTitle>
 
-<h1>Реестр команд</h1>
+
+<h1>
+    Реестр команд
+    <a href="commands/create" class="btn-command btn-primary" style="float: right;">Создать новую команду</a>
+
+</h1>
 
 <p>
-    <a href="commands/create">Создать новую команду</a>
+
 </p>
+
 
 <QuickGrid Class="table" Items="context.Command">
     <TemplateColumn Title="Название" Context="command">
-        <a href="@($"commands/details?id={command.Id}")" class="text-decoration-none">@command.Name</a>
+        <a href="@($"commands/details?id={command.Id}")" class="text-decoration-table">@command.Name</a>
     </TemplateColumn>  
 
 </QuickGrid>

@@ -20,7 +20,7 @@
 
 <QuickGrid Class="table" Items="context.Note">
     <TemplateColumn Title="Название" Context="note">
-        <a href="@($"notes/details?id={note.Id}")" class="text-decoration-none">@note.Title</a>
+        <a href="@($"notes/details?id={note.Id}")" class="text-decoration-table">@note.Title</a>
     </TemplateColumn>
 
     <PropertyColumn Property="note => note.CreatedBy" Title="Кем создано"/>

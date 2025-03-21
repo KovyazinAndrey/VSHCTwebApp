@@ -26,8 +26,8 @@
             <dd class="col-sm-10">@note.CreatedAt</dd>
         </dl>
         <div>
-            <a href="@($"/notes/edit?id={note.Id}")">Изменить</a> |
-            <a href="@($"/notes")">Вернуться</a>
+            <a href="@($"/notes/edit?id={note.Id}")" class="btn-edit btn-primary">Изменить</a>
+            <a href="@($"/notes")" class="btn-back btn-primary">Вернуться</a>
         </div>
     }
 </div>

@@ -8,15 +8,19 @@
 
 <PageTitle>Index</PageTitle>
 
-<h1>Биржа проектов</h1>
+<h1>
+    Биржа проектов
+    <a href="projects/create" class="btn-project btn-primary" style="float: right;">Добавить новый проект</a>
+
+</h1>
 
 <p>
-    <a href="projects/create">Create New</a>
+
 </p>
 
 <QuickGrid Class="table" Items="context.Project">
     <TemplateColumn Title="Название" Context="project">
-        <a href="@($"projects/details?id={project.Id}")" class="text-decoration-none">@project.Title</a>
+        <a href="@($"projects/details?id={project.Id}")" class="text-decoration-table">@project.Title</a>
     </TemplateColumn>
     <PropertyColumn Property="project => project.Description" Title = "Описание"/>
     <PropertyColumn Property="project => project.CreatedBy" Title = "Кем создано"/>

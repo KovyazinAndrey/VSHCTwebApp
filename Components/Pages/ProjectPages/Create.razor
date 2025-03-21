@@ -6,9 +6,9 @@
 
 <PageTitle>Create</PageTitle>
 
-<h1>Create</h1>
+<h1>Добавить проект</h1>
 
-<h2>Project</h2>
+
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -16,32 +16,33 @@
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert"/>
             <div class="mb-3">
-                <label for="title" class="form-label">Title:</label> 
+                <label for="title" class="form-label">Название:</label> 
                 <InputText id="title" @bind-Value="Project.Title" class="form-control" /> 
                 <ValidationMessage For="() => Project.Title" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="description" class="form-label">Description:</label> 
+                <label for="description" class="form-label">Описание:</label> 
                 <InputText id="description" @bind-Value="Project.Description" class="form-control" /> 
                 <ValidationMessage For="() => Project.Description" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="createdby" class="form-label">CreatedBy:</label> 
+                <label for="createdby" class="form-label">Кем создано:</label> 
                 <InputText id="createdby" @bind-Value="Project.CreatedBy" class="form-control" /> 
                 <ValidationMessage For="() => Project.CreatedBy" class="text-danger" /> 
             </div>        
             <div class="mb-3">
-                <label for="confermedby" class="form-label">ConfermedBy:</label> 
+                <label for="confermedby" class="form-label">Кем подтверждено:</label> 
                 <InputText id="confermedby" @bind-Value="Project.ConfermedBy" class="form-control" /> 
                 <ValidationMessage For="() => Project.ConfermedBy" class="text-danger" /> 
             </div>        
-            <button type="submit" class="btn btn-primary">Create</button>
+            <button type="submit" class="btn btn-primary">Добавить проект</button>
         </EditForm>
     </div>
 </div>
 
 <div>
-    <a href="/projects">Back to List</a>
+    <a> </a>
+    <a href="/projects">Вернуться</a>
 </div>
 
 @code {
