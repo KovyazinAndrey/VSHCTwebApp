@@ -77,6 +77,18 @@ namespace VSHCTwebApp.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("Competitions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Ideas")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AboutMe")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AvatarPath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")

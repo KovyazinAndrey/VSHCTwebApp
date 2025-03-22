@@ -3,22 +3,58 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
 @using VSHCTwebApp.Data
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.AspNetCore.Components.Forms
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
+@inject IWebHostEnvironment WebHostEnvironment
+@inject ILogger<Index> Logger
+@inject NavigationManager NavigationManager
 
 <PageTitle>Profile</PageTitle>
 
 <h3>Profile</h3>
-<StatusMessage />
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusClass" role="alert">
+        @statusMessage
+    </div>
+}
 
 <div class="row">
     <div class="col-md-6">
+        <div class="text-center mb-3">
+            @if (!string.IsNullOrEmpty(user?.AvatarPath))
+            {
+                <img src="@user.AvatarPath" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;" alt="Avatar" />
+                <div class="text-muted small">Current avatar path: @user.AvatarPath</div>
+            }
+            else
+            {
+                <img src="/images/default-avatar.png" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;" alt="Default Avatar" />
+                <div class="text-muted small">Using default avatar</div>
+            }
+        </div>
         <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
+            <div class="mb-3">
+                <InputFile OnChange="OnFileChange" class="form-control" accept=".jpg,.jpeg,.png" />
+                <div class="form-text">Загрузите изображение для аватара (JPG, JPEG или PNG)</div>
+                @if (uploadError != null)
+                {
+                    <div class="text-danger">@uploadError</div>
+                }
+                @if (avatarFile != null)
+                {
+                    <div class="text-success">Выбран файл: @avatarFile.Name (@avatarFile.Size байт)</div>
+                }
+            </div>
             <div class="form-floating mb-3">
                 <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
                 <label for="username" class="form-label">Username</label>
@@ -27,6 +63,21 @@
                 <InputText @bind-Value="Input.PhoneNumber" class="form-control" placeholder="Please enter your phone number." />
                 <label for="phone-number" class="form-label">Phone number</label>
                 <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Competitions" class="form-control" placeholder="Please enter your competitions." />
+                <label for="competitions" class="form-label">Competitions</label>
+                <ValidationMessage For="() => Input.Competitions" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Ideas" class="form-control" placeholder="Please enter your ideas." />
+                <label for="ideas" class="form-label">Ideas</label>
+                <ValidationMessage For="() => Input.Ideas" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputTextArea @bind-Value="Input.AboutMe" class="form-control" placeholder="Please tell about yourself." style="height: 100px;" />
+                <label for="about-me" class="form-label">About me</label>
+                <ValidationMessage For="() => Input.AboutMe" class="text-danger" />
             </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </EditForm>
@@ -37,6 +88,13 @@
     private ApplicationUser user = default!;
     private string? username;
     private string? phoneNumber;
+    private string? competitions;
+    private string? ideas;
+    private string? aboutMe;
+    private IBrowserFile? avatarFile;
+    private string? uploadError;
+    private string? statusMessage;
+    private string statusClass = "alert-success";
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -46,26 +104,189 @@
 
     protected override async Task OnInitializedAsync()
     {
-        user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-        username = await UserManager.GetUserNameAsync(user);
-        phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+        try
+        {
+            user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+            username = await UserManager.GetUserNameAsync(user);
+            phoneNumber = await UserManager.GetPhoneNumberAsync(user);
+            competitions = user.Competitions;
+            ideas = user.Ideas;
+            aboutMe = user.AboutMe;
 
-        Input.PhoneNumber ??= phoneNumber;
+            Input.PhoneNumber ??= phoneNumber;
+            Input.Competitions ??= competitions;
+            Input.Ideas ??= ideas;
+            Input.AboutMe ??= aboutMe;
+
+            Logger.LogInformation($"User loaded. Avatar path: {user.AvatarPath}");
+            Logger.LogInformation($"WebRootPath: {WebHostEnvironment.WebRootPath}");
+            Logger.LogInformation($"User ID: {user.Id}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error in OnInitializedAsync: {ex.Message}");
+            ShowError("Ошибка при загрузке профиля");
+        }
+    }
+
+    private void ShowSuccess(string message)
+    {
+        statusMessage = message;
+        statusClass = "alert-success";
+        StateHasChanged();
+    }
+
+    private void ShowError(string message)
+    {
+        statusMessage = message;
+        statusClass = "alert-danger";
+        StateHasChanged();
+    }
+
+    private async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            uploadError = null;
+            avatarFile = e.File;
+            Logger.LogInformation($"File selected: {e.File.Name}, Size: {e.File.Size} bytes");
+            StateHasChanged(); // Принудительно обновляем UI после выбора файла
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error in OnFileChange: {ex.Message}");
+            uploadError = "Ошибка при выборе файла";
+            ShowError(uploadError);
+        }
+    }
+
+    private async Task<string> SaveAvatar()
+    {
+        if (avatarFile == null) return user.AvatarPath ?? "";
+
+        try
+        {
+            // Проверяем расширение файла
+            var fileExtension = Path.GetExtension(avatarFile.Name).ToLower();
+            if (fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png")
+            {
+                throw new InvalidOperationException("Недопустимый формат файла. Разрешены только JPG, JPEG и PNG.");
+            }
+
+            // Используем только английские символы в пути
+            var fileName = $"{user.Id}{fileExtension}";
+            var webPath = $"/uploads/avatars/{fileName}";
+            
+            // Получаем физический путь к файлу
+            var filePath = WebHostEnvironment.WebRootFileProvider.GetFileInfo(webPath.TrimStart('/')).PhysicalPath;
+            
+            if (string.IsNullOrEmpty(filePath))
+            {
+                // Если не удалось получить физический путь, создаем его вручную
+                filePath = Path.Combine(WebHostEnvironment.WebRootPath, "uploads", "avatars", fileName);
+            }
+
+            // Создаем директории
+            var directoryPath = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            // Сохраняем файл
+            using (var stream = avatarFile.OpenReadStream(maxAllowedSize: 1024 * 1024))
+            using (var fileStream = File.Create(filePath))
+            {
+                await stream.CopyToAsync(fileStream);
+            }
+
+            // Проверяем, что файл создался
+            if (!File.Exists(filePath))
+            {
+                throw new Exception($"Не удалось сохранить файл по пути: {filePath}");
+            }
+
+            return webPath;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Ошибка при сохранении аватара: {ex.Message}");
+        }
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        try
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
+            if (Input.PhoneNumber != phoneNumber)
             {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+                var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+                if (!setPhoneResult.Succeeded)
+                {
+                    ShowError("Ошибка при обновлении номера телефона");
+                    return;
+                }
             }
-        }
 
-        await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+            var needsUpdate = Input.Competitions != competitions || 
+                             Input.Ideas != ideas || 
+                             Input.AboutMe != aboutMe || 
+                             avatarFile != null;
+
+            if (needsUpdate)
+            {
+                if (avatarFile != null)
+                {
+                    try
+                    {
+                        var newAvatarPath = await SaveAvatar();
+                        Logger.LogInformation($"New avatar path: {newAvatarPath}");
+                        user.AvatarPath = newAvatarPath;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"Error saving avatar: {ex.Message}");
+                        ShowError($"Ошибка при сохранении аватара: {ex.Message}");
+                        return;
+                    }
+                }
+
+                user.Competitions = Input.Competitions;
+                user.Ideas = Input.Ideas;
+                user.AboutMe = Input.AboutMe;
+
+                var updateResult = await UserManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+                    Logger.LogError($"Failed to update user: {errors}");
+                    ShowError($"Ошибка при обновлении профиля: {errors}");
+                    return;
+                }
+
+                Logger.LogInformation($"User updated successfully. New avatar path: {user.AvatarPath}");
+            }
+
+            await SignInManager.RefreshSignInAsync(user);
+            
+            // Обновляем локальные переменные
+            phoneNumber = Input.PhoneNumber;
+            competitions = Input.Competitions;
+            ideas = Input.Ideas;
+            aboutMe = Input.AboutMe;
+            avatarFile = null;
+            
+            ShowSuccess("Профиль успешно обновлен");
+
+            // Перезагружаем данные пользователя
+            user = await UserAccessor.GetRequiredUserAsync(HttpContext);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error in OnValidSubmitAsync: {ex.Message}");
+            ShowError($"Ошибка при сохранении: {ex.Message}");
+        }
     }
 
     private sealed class InputModel
@@ -73,5 +294,14 @@
         [Phone]
         [Display(Name = "Phone number")]
         public string? PhoneNumber { get; set; }
+
+        [Display(Name = "Competitions")]
+        public string? Competitions { get; set; }
+
+        [Display(Name = "Ideas")]
+        public string? Ideas { get; set; }
+
+        [Display(Name = "About me")]
+        public string? AboutMe { get; set; }
     }
 }
