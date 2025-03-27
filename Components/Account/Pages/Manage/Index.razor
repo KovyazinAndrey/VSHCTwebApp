@@ -166,6 +166,12 @@
 
         try
         {
+            // Проверяем размер файла
+            if (avatarFile.Size > 1024 * 1024)
+            {
+                throw new InvalidOperationException("Размер файла не должен превышать 1MB");
+            }
+
             // Проверяем расширение файла
             var fileExtension = Path.GetExtension(avatarFile.Name).ToLower();
             if (fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png")
@@ -173,40 +179,49 @@
                 throw new InvalidOperationException("Недопустимый формат файла. Разрешены только JPG, JPEG и PNG.");
             }
 
-            // Используем только английские символы в пути
+            // Формируем пути
+            var uploadsPath = Path.Combine(WebHostEnvironment.WebRootPath, "uploads");
+            var avatarsPath = Path.Combine(uploadsPath, "avatars");
             var fileName = $"{user.Id}{fileExtension}";
-            var webPath = $"/uploads/avatars/{fileName}";
-            
-            // Получаем физический путь к файлу
-            var filePath = WebHostEnvironment.WebRootFileProvider.GetFileInfo(webPath.TrimStart('/')).PhysicalPath;
-            
-            if (string.IsNullOrEmpty(filePath))
-            {
-                // Если не удалось получить физический путь, создаем его вручную
-                filePath = Path.Combine(WebHostEnvironment.WebRootPath, "uploads", "avatars", fileName);
-            }
+            var filePath = Path.Combine(avatarsPath, fileName);
 
-            // Создаем директории
-            var directoryPath = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(directoryPath))
+            try
             {
-                Directory.CreateDirectory(directoryPath);
-            }
+                // Создаем директории
+                Directory.CreateDirectory(avatarsPath);
 
-            // Сохраняем файл
-            using (var stream = avatarFile.OpenReadStream(maxAllowedSize: 1024 * 1024))
-            using (var fileStream = File.Create(filePath))
+                // Сохраняем файл
+                using (var stream = avatarFile.OpenReadStream())
+                {
+                    // Читаем файл в память
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    
+                    // Проверяем, что файл не пустой
+                    if (memoryStream.Length == 0)
+                    {
+                        throw new InvalidOperationException("Файл пуст");
+                    }
+
+                    // Сохраняем файл
+                    memoryStream.Position = 0;
+                    using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    await memoryStream.CopyToAsync(fileStream);
+                }
+
+                // Проверяем, что файл создался и не пустой
+                var fileInfo = new FileInfo(filePath);
+                if (!fileInfo.Exists || fileInfo.Length == 0)
+                {
+                    throw new Exception("Файл не был создан или пуст");
+                }
+
+                return $"/uploads/avatars/{fileName}";
+            }
+            catch (Exception ex)
             {
-                await stream.CopyToAsync(fileStream);
+                throw new Exception($"Ошибка при записи файла: {ex.Message}");
             }
-
-            // Проверяем, что файл создался
-            if (!File.Exists(filePath))
-            {
-                throw new Exception($"Не удалось сохранить файл по пути: {filePath}");
-            }
-
-            return webPath;
         }
         catch (Exception ex)
         {
