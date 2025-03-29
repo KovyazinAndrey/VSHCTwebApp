@@ -7,6 +7,9 @@ using VSHCTwebApp.Components.Account;
 using VSHCTwebApp.Components.Services;
 using VSHCTwebApp.Data;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace VSHCTwebApp
 {
@@ -15,6 +18,13 @@ namespace VSHCTwebApp
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // Настройка логирования
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+            builder.Logging.AddDebug();
+            builder.Logging.AddFile("logs/app-{Date}.txt");
+
             builder.Services.AddDbContextFactory<VSHCTwebAppContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("VSHCTwebAppContext") ?? throw new InvalidOperationException("Connection string 'VSHCTwebAppContext' not found.")));
 
@@ -23,6 +33,12 @@ namespace VSHCTwebApp
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+
+            // Настройка максимального размера загружаемого файла
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 1024 * 1024 * 2; // 2MB
+            });
 
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddScoped<IdentityUserAccessor>();
@@ -75,6 +91,13 @@ namespace VSHCTwebApp
 
             var app = builder.Build();
 
+            // Создаем папку для аватаров при запуске
+            var avatarsPath = Path.Combine(builder.Environment.WebRootPath, "images", "avatars");
+            if (!Directory.Exists(avatarsPath))
+            {
+                Directory.CreateDirectory(avatarsPath);
+            }
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -91,6 +114,18 @@ namespace VSHCTwebApp
             app.UseHttpsRedirection();
 
             app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(builder.Environment.WebRootPath, "images")),
+                RequestPath = "/images"
+            });
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(builder.Environment.WebRootPath, "uploads")),
+                RequestPath = "/uploads"
+            });
             app.UseAntiforgery();
 
             app.MapRazorComponents<App>()

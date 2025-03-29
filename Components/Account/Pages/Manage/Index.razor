@@ -6,6 +6,9 @@
 @using System.IO
 @using Microsoft.AspNetCore.Hosting
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Drawing
+@using System.Drawing.Imaging
+@inject IJSRuntime JSRuntime
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
@@ -32,29 +35,55 @@
             @if (!string.IsNullOrEmpty(user?.AvatarPath))
             {
                 <img src="@user.AvatarPath" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;" alt="Avatar" />
-                <div class="text-muted small">Current avatar path: @user.AvatarPath</div>
             }
             else
             {
                 <img src="/images/default-avatar.png" class="rounded-circle" style="width: 150px; height: 150px; object-fit: cover;" alt="Default Avatar" />
-                <div class="text-muted small">Using default avatar</div>
             }
         </div>
+
+        <div class="mb-3">
+            <InputFile @ref="inputFileReference" OnChange="OnFileChange" class="form-control d-none" accept=".jpg,.jpeg,.png" />
+            <button type="button" class="btn btn-secondary" @onclick="TriggerFileInput">
+                Выбрать файл
+            </button>
+            <div class="mt-2">
+                @if (selectedFileName != null)
+                {
+                    <span class="text-success">
+                        Выбран файл: @selectedFileName (@selectedFileSize KB)
+                    </span>
+                }
+                else
+                {
+                    <span class="text-muted">Файл не выбран</span>
+                }
+            </div>
+            <div class="form-text">Загрузите изображение для аватара (JPG, JPEG или PNG, максимум 2MB)</div>
+            @if (uploadError != null)
+            {
+                <div class="text-danger mt-2">@uploadError</div>
+            }
+            <div class="mt-2">
+                <button type="button" class="btn btn-primary" @onclick="UploadAvatar" disabled="@(!isFileSelected)">
+                    @if(isUploading)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span>Загрузка...</span>
+                    }
+                    else
+                    {
+                        <span>Загрузить аватар</span>
+                    }
+                </button>
+                <div class="text-muted mt-1">isFileSelected: @isFileSelected, avatarFile is null: @(avatarFile == null)</div>
+            </div>
+        </div>
+
         <EditForm Model="Input" FormName="profile" OnValidSubmit="OnValidSubmitAsync" method="post">
             <DataAnnotationsValidator />
             <ValidationSummary class="text-danger" role="alert" />
-            <div class="mb-3">
-                <InputFile OnChange="OnFileChange" class="form-control" accept=".jpg,.jpeg,.png" />
-                <div class="form-text">Загрузите изображение для аватара (JPG, JPEG или PNG)</div>
-                @if (uploadError != null)
-                {
-                    <div class="text-danger">@uploadError</div>
-                }
-                @if (avatarFile != null)
-                {
-                    <div class="text-success">Выбран файл: @avatarFile.Name (@avatarFile.Size байт)</div>
-                }
-            </div>
+
             <div class="form-floating mb-3">
                 <input type="text" value="@username" class="form-control" placeholder="Please choose your username." disabled />
                 <label for="username" class="form-label">Username</label>
@@ -95,6 +124,11 @@
     private string? uploadError;
     private string? statusMessage;
     private string statusClass = "alert-success";
+    private bool isFileSelected;
+    private bool isUploading;
+    private string? selectedFileName;
+    private long? selectedFileSize;
+    private InputFile? inputFileReference;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -117,10 +151,6 @@
             Input.Competitions ??= competitions;
             Input.Ideas ??= ideas;
             Input.AboutMe ??= aboutMe;
-
-            Logger.LogInformation($"User loaded. Avatar path: {user.AvatarPath}");
-            Logger.LogInformation($"WebRootPath: {WebHostEnvironment.WebRootPath}");
-            Logger.LogInformation($"User ID: {user.Id}");
         }
         catch (Exception ex)
         {
@@ -147,85 +177,217 @@
     {
         try
         {
+            Logger.LogInformation("OnFileChange started");
+            Logger.LogInformation($"Files count: {e.FileCount}");
+            
+            // Получаем первый файл из списка
+            var file = e.GetMultipleFiles(1).FirstOrDefault();
+            
+            if (file == null)
+            {
+                Logger.LogWarning("No file selected");
+                ResetFileSelection();
+                return;
+            }
+
+            Logger.LogInformation($"File name: {file.Name}");
+            Logger.LogInformation($"File size: {file.Size}");
+            Logger.LogInformation($"Content type: {file.ContentType}");
+            
+            var fileExtension = Path.GetExtension(file.Name).ToLower();
+            if (!new[] { ".jpg", ".jpeg", ".png" }.Contains(fileExtension))
+            {
+                Logger.LogWarning($"Invalid file extension: {fileExtension}");
+                uploadError = "Допустимы только JPG/JPEG/PNG";
+                ResetFileSelection();
+                return;
+            }
+
+            if (file.Size > 2 * 1024 * 1024) // 2MB
+            {
+                Logger.LogWarning($"File too large: {file.Size} bytes");
+                uploadError = "Размер файла не должен превышать 2MB";
+                ResetFileSelection();
+                return;
+            }
+
+            // Устанавливаем значения переменных
+            avatarFile = file;
+            selectedFileName = file.Name;
+            selectedFileSize = file.Size / 1024; // Convert to KB
+            isFileSelected = true;
             uploadError = null;
-            avatarFile = e.File;
-            Logger.LogInformation($"File selected: {e.File.Name}, Size: {e.File.Size} bytes");
-            StateHasChanged(); // Принудительно обновляем UI после выбора файла
+
+            Logger.LogInformation($"File selected successfully. isFileSelected: {isFileSelected}, avatarFile is null: {avatarFile == null}");
+            
+            // Вызываем StateHasChanged для обновления UI
+            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             Logger.LogError($"Error in OnFileChange: {ex.Message}");
-            uploadError = "Ошибка при выборе файла";
-            ShowError(uploadError);
+            Logger.LogError($"Stack trace: {ex.StackTrace}");
+            ShowError("Ошибка при выборе файла");
+            ResetFileSelection();
         }
     }
 
-    private async Task<string> SaveAvatar()
+    private void ResetFileSelection()
     {
-        if (avatarFile == null) return user.AvatarPath ?? "";
-
         try
         {
-            // Проверяем размер файла
-            if (avatarFile.Size > 1024 * 1024)
-            {
-                throw new InvalidOperationException("Размер файла не должен превышать 1MB");
-            }
-
-            // Проверяем расширение файла
-            var fileExtension = Path.GetExtension(avatarFile.Name).ToLower();
-            if (fileExtension != ".jpg" && fileExtension != ".jpeg" && fileExtension != ".png")
-            {
-                throw new InvalidOperationException("Недопустимый формат файла. Разрешены только JPG, JPEG и PNG.");
-            }
-
-            // Формируем пути
-            var uploadsPath = Path.Combine(WebHostEnvironment.WebRootPath, "uploads");
-            var avatarsPath = Path.Combine(uploadsPath, "avatars");
-            var fileName = $"{user.Id}{fileExtension}";
-            var filePath = Path.Combine(avatarsPath, fileName);
-
-            try
-            {
-                // Создаем директории
-                Directory.CreateDirectory(avatarsPath);
-
-                // Сохраняем файл
-                using (var stream = avatarFile.OpenReadStream())
-                {
-                    // Читаем файл в память
-                    using var memoryStream = new MemoryStream();
-                    await stream.CopyToAsync(memoryStream);
-                    
-                    // Проверяем, что файл не пустой
-                    if (memoryStream.Length == 0)
-                    {
-                        throw new InvalidOperationException("Файл пуст");
-                    }
-
-                    // Сохраняем файл
-                    memoryStream.Position = 0;
-                    using var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
-                    await memoryStream.CopyToAsync(fileStream);
-                }
-
-                // Проверяем, что файл создался и не пустой
-                var fileInfo = new FileInfo(filePath);
-                if (!fileInfo.Exists || fileInfo.Length == 0)
-                {
-                    throw new Exception("Файл не был создан или пуст");
-                }
-
-                return $"/uploads/avatars/{fileName}";
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Ошибка при записи файла: {ex.Message}");
-            }
+            Logger.LogInformation("Resetting file selection");
+            avatarFile = null;
+            selectedFileName = null;
+            selectedFileSize = null;
+            isFileSelected = false;
+            uploadError = null;
+            InvokeAsync(StateHasChanged);
+            Logger.LogInformation($"File selection reset. isFileSelected: {isFileSelected}, avatarFile is null: {avatarFile == null}");
         }
         catch (Exception ex)
         {
-            throw new Exception($"Ошибка при сохранении аватара: {ex.Message}");
+            Logger.LogError($"Error in ResetFileSelection: {ex.Message}");
+        }
+    }
+
+    private async Task UploadAvatar()
+    {
+        try
+        {
+            Logger.LogInformation("UploadAvatar started");
+            Logger.LogInformation($"Current state - isFileSelected: {isFileSelected}, avatarFile is null: {avatarFile == null}");
+
+            if (!isFileSelected || avatarFile == null)
+            {
+                Logger.LogWarning("No file selected for upload");
+                ShowError("Файл не выбран");
+                return;
+            }
+
+            isUploading = true;
+            await InvokeAsync(StateHasChanged);
+
+            var fileExtension = Path.GetExtension(avatarFile.Name).ToLower();
+            var fileName = $"{user.Id}{fileExtension}";
+            var imagesPath = Path.Combine(WebHostEnvironment.WebRootPath, "images");
+            var avatarsPath = Path.Combine(imagesPath, "avatars");
+
+            // Проверяем и создаем директории
+            try
+            {
+                if (!Directory.Exists(imagesPath))
+                {
+                    Directory.CreateDirectory(imagesPath);
+                }
+                if (!Directory.Exists(avatarsPath))
+                {
+                    Directory.CreateDirectory(avatarsPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error creating directories: {ex.Message}");
+                ShowError("Ошибка при создании директорий");
+                return;
+            }
+
+            var filePath = Path.Combine(avatarsPath, fileName);
+            Logger.LogInformation($"Saving file to: {filePath}");
+
+            // Проверяем, что файл действительно является изображением
+            try
+            {
+                using var stream = avatarFile.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                using var image = Image.FromStream(memoryStream);
+                if (image.Width <= 0 || image.Height <= 0)
+                {
+                    throw new Exception("Invalid image dimensions");
+                }
+
+                // Сохраняем файл
+                memoryStream.Position = 0;
+                using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+                {
+                    await memoryStream.CopyToAsync(fileStream);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error validating or saving image: {ex.Message}");
+                ShowError("Выбранный файл не является допустимым изображением");
+                return;
+            }
+
+            // Обновляем путь к аватару в базе данных
+            var oldAvatarPath = user.AvatarPath;
+            user.AvatarPath = $"/images/avatars/{fileName}";
+            var result = await UserManager.UpdateAsync(user);
+            
+            if (result.Succeeded)
+            {
+                Logger.LogInformation("Avatar uploaded and user updated successfully");
+                await SignInManager.RefreshSignInAsync(user);
+                
+                // Удаляем старый файл аватара, если он существует
+                if (!string.IsNullOrEmpty(oldAvatarPath))
+                {
+                    var oldFilePath = Path.Combine(WebHostEnvironment.WebRootPath, oldAvatarPath.TrimStart('/').Replace('/', '\\'));
+                    try
+                    {
+                        if (File.Exists(oldFilePath))
+                        {
+                            File.Delete(oldFilePath);
+                            Logger.LogInformation($"Old avatar file deleted: {oldFilePath}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning($"Failed to delete old avatar file: {ex.Message}");
+                    }
+                }
+                
+                ShowSuccess("Аватар успешно обновлен");
+            }
+            else
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                Logger.LogError($"Failed to update user: {errors}");
+                
+                // Удаляем загруженный файл, так как обновление пользователя не удалось
+                try
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                        Logger.LogInformation($"Deleted uploaded file after failed user update: {filePath}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning($"Failed to delete uploaded file: {ex.Message}");
+                }
+                
+                ShowError("Ошибка при обновлении профиля");
+            }
+
+            // Сбрасываем состояние выбора файла
+            ResetFileSelection();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error uploading avatar: {ex.Message}");
+            Logger.LogError($"Stack trace: {ex.StackTrace}");
+            ShowError("Ошибка при загрузке аватара");
+        }
+        finally
+        {
+            isUploading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -233,74 +395,44 @@
     {
         try
         {
-            if (Input.PhoneNumber != phoneNumber)
+            user.PhoneNumber = Input.PhoneNumber;
+            user.Competitions = Input.Competitions;
+            user.Ideas = Input.Ideas;
+            user.AboutMe = Input.AboutMe;
+
+            var result = await UserManager.UpdateAsync(user);
+            if (result.Succeeded)
             {
-                var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-                if (!setPhoneResult.Succeeded)
-                {
-                    ShowError("Ошибка при обновлении номера телефона");
-                    return;
-                }
+                await SignInManager.RefreshSignInAsync(user);
+                ShowSuccess("Профиль успешно обновлен");
             }
-
-            var needsUpdate = Input.Competitions != competitions || 
-                             Input.Ideas != ideas || 
-                             Input.AboutMe != aboutMe || 
-                             avatarFile != null;
-
-            if (needsUpdate)
+            else
             {
-                if (avatarFile != null)
-                {
-                    try
-                    {
-                        var newAvatarPath = await SaveAvatar();
-                        Logger.LogInformation($"New avatar path: {newAvatarPath}");
-                        user.AvatarPath = newAvatarPath;
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogError($"Error saving avatar: {ex.Message}");
-                        ShowError($"Ошибка при сохранении аватара: {ex.Message}");
-                        return;
-                    }
-                }
-
-                user.Competitions = Input.Competitions;
-                user.Ideas = Input.Ideas;
-                user.AboutMe = Input.AboutMe;
-
-                var updateResult = await UserManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    var errors = string.Join(", ", updateResult.Errors.Select(e => e.Description));
-                    Logger.LogError($"Failed to update user: {errors}");
-                    ShowError($"Ошибка при обновлении профиля: {errors}");
-                    return;
-                }
-
-                Logger.LogInformation($"User updated successfully. New avatar path: {user.AvatarPath}");
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                Logger.LogError($"Error updating user: {errors}");
+                ShowError("Ошибка при обновлении профиля");
             }
-
-            await SignInManager.RefreshSignInAsync(user);
-            
-            // Обновляем локальные переменные
-            phoneNumber = Input.PhoneNumber;
-            competitions = Input.Competitions;
-            ideas = Input.Ideas;
-            aboutMe = Input.AboutMe;
-            avatarFile = null;
-            
-            ShowSuccess("Профиль успешно обновлен");
-
-            // Перезагружаем данные пользователя
-            user = await UserAccessor.GetRequiredUserAsync(HttpContext);
-            StateHasChanged();
         }
         catch (Exception ex)
         {
             Logger.LogError($"Error in OnValidSubmitAsync: {ex.Message}");
-            ShowError($"Ошибка при сохранении: {ex.Message}");
+            Logger.LogError($"Stack trace: {ex.StackTrace}");
+            ShowError("Ошибка при обновлении профиля");
+        }
+    }
+
+    private async Task TriggerFileInput()
+    {
+        try
+        {
+            if (inputFileReference != null)
+            {
+                await JSRuntime.InvokeVoidAsync("triggerClick", inputFileReference.Element);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError($"Error triggering file input: {ex.Message}");
         }
     }
 
@@ -320,3 +452,4 @@
         public string? AboutMe { get; set; }
     }
 }
+
